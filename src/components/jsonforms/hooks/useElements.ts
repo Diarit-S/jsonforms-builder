@@ -8,6 +8,7 @@ import {
 import set from "lodash.set";
 
 import { useFormData } from "../../providers/FormDataProvider";
+import { AlobeesElementConfig } from "@/lib/alobees/types";
 
 const addElementToLayout = (
   uiElement: Layout,
@@ -108,4 +109,50 @@ export const useDeleteUiElement = () => {
   };
 
   return handleElementRemove;
+};
+
+const updateElementInLayout = (
+  uiElement: Layout | ControlElement,
+  targetElement: ControlElement,
+  updater: (element: ControlElement) => ControlElement
+): Layout | ControlElement => {
+  if (isControl(uiElement)) {
+    if (uiElement === targetElement) {
+      return updater(uiElement);
+    }
+    return uiElement;
+  }
+
+  return {
+    ...uiElement,
+    elements: uiElement.elements.map((el) =>
+      updateElementInLayout(el as Layout, targetElement, updater)
+    ) as UISchemaElement[]
+  };
+};
+
+export const useUpdateAlobeesConfig = (targetElement: ControlElement) => {
+  const { changeUiSchema, uischema } = useFormData();
+
+  const handleUpdateConfig = (config: AlobeesElementConfig | undefined) => {
+    if (!uischema) {
+      return;
+    }
+
+    const newCopy = updateElementInLayout(
+      uischema as Layout,
+      targetElement,
+      (element) => ({
+        ...element,
+        options: {
+          ...element.options,
+          alobees: config
+        }
+      })
+    );
+
+    changeUiSchema(newCopy as Layout | ControlElement);
+  };
+
+  return handleUpdateConfig;
 };

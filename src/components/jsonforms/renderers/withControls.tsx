@@ -9,24 +9,39 @@ import {
 import { X } from "lucide-react";
 
 import { AddElement } from "@/components/AddElement/AddElement";
+import { AlobeesElement } from "@/components/AlobeesElement/AlobeesElement";
 import {
   AddCategoryElement,
   AddLayoutElement
 } from "@/components/AddLayoutElement/AddLayoutElement";
-import { useDeleteUiElement } from "@/components/jsonforms/hooks/useElements";
+import {
+  useDeleteUiElement,
+  useUpdateAlobeesConfig
+} from "@/components/jsonforms/hooks/useElements";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import type { AlobeesElementConfig } from "@/lib/alobees/types";
+
+interface ControlElementWithAlobees extends ControlElement {
+  options?: {
+    alobees?: AlobeesElementConfig;
+  };
+}
 
 export const withElementControls = (
   WrappedComponent: ComponentType<ControlProps>
 ) => {
   return (props: ControlProps) => {
     const { visible, uischema } = props;
+    const controlElement = uischema as ControlElementWithAlobees;
 
     const removeElement = useDeleteUiElement();
+    const updateAlobeesConfig = useUpdateAlobeesConfig(controlElement);
+
+    const currentAlobeesConfig = controlElement?.options?.alobees;
 
     if (!visible) {
       return null;
@@ -48,6 +63,10 @@ export const withElementControls = (
           </Tooltip>
         </div>
         <WrappedComponent {...props} />
+        <AlobeesElement
+          value={currentAlobeesConfig}
+          onChange={updateAlobeesConfig}
+        />
       </div>
     );
   };
