@@ -3,12 +3,13 @@ import {
   isControl,
   type JsonSchema,
   type Layout,
+  type Rule,
   type UISchemaElement
 } from "@jsonforms/core";
 import set from "lodash.set";
 
 import { useFormData } from "../../providers/FormDataProvider";
-import { AlobeesElementConfig } from "@/lib/alobees/types";
+import type { AlobeesElementConfig } from "@/lib/alobees/types";
 
 const addElementToLayout = (
   uiElement: Layout,
@@ -155,4 +156,54 @@ export const useUpdateAlobeesConfig = (targetElement: ControlElement) => {
   };
 
   return handleUpdateConfig;
+};
+
+export const useUpdateRule = (targetElement: ControlElement) => {
+  const { changeUiSchema, uischema } = useFormData();
+
+  const handleUpdateRule = (rule: Rule | undefined) => {
+    if (!uischema) {
+      return;
+    }
+
+    const newCopy = updateElementInLayout(
+      uischema as Layout,
+      targetElement,
+      (element) => {
+        if (rule) {
+          return { ...element, rule };
+        }
+        // Remove rule if undefined
+        const { rule: _, ...rest } = element as ControlElement & { rule?: Rule };
+        return rest as ControlElement;
+      }
+    );
+
+    changeUiSchema(newCopy as Layout | ControlElement);
+  };
+
+  return handleUpdateRule;
+};
+
+const collectScopes = (uiElement: Layout | ControlElement): string[] => {
+  if (isControl(uiElement)) {
+    return [uiElement.scope];
+  }
+
+  if (uiElement.elements) {
+    return uiElement.elements.flatMap((el) => collectScopes(el as Layout));
+  }
+
+  return [];
+};
+
+export const useAvailableScopes = (currentScope?: string): string[] => {
+  const { uischema } = useFormData();
+
+  if (!uischema) {
+    return [];
+  }
+
+  const allScopes = collectScopes(uischema as Layout);
+  return allScopes.filter((scope) => scope !== currentScope);
 };

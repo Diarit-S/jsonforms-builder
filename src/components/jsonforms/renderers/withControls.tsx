@@ -4,7 +4,8 @@ import {
   type Categorization,
   type ControlElement,
   type ControlProps,
-  type LayoutProps
+  type LayoutProps,
+  type Rule
 } from "@jsonforms/core";
 import { X } from "lucide-react";
 
@@ -15,9 +16,12 @@ import {
   AddLayoutElement
 } from "@/components/AddLayoutElement/AddLayoutElement";
 import {
+  useAvailableScopes,
   useDeleteUiElement,
-  useUpdateAlobeesConfig
+  useUpdateAlobeesConfig,
+  useUpdateRule
 } from "@/components/jsonforms/hooks/useElements";
+import { RuleElement } from "@/components/RuleElement/RuleElement";
 import {
   Tooltip,
   TooltipContent,
@@ -25,10 +29,11 @@ import {
 } from "@/components/ui/tooltip";
 import type { AlobeesElementConfig } from "@/lib/alobees/types";
 
-interface ControlElementWithAlobees extends ControlElement {
+interface ControlElementWithExtensions extends ControlElement {
   options?: {
     alobees?: AlobeesElementConfig;
   };
+  rule?: Rule;
 }
 
 export const withElementControls = (
@@ -36,12 +41,15 @@ export const withElementControls = (
 ) => {
   return (props: ControlProps) => {
     const { visible, uischema } = props;
-    const controlElement = uischema as ControlElementWithAlobees;
+    const controlElement = uischema as ControlElementWithExtensions;
 
     const removeElement = useDeleteUiElement();
     const updateAlobeesConfig = useUpdateAlobeesConfig(controlElement);
+    const updateRule = useUpdateRule(controlElement);
+    const availableScopes = useAvailableScopes(controlElement?.scope);
 
     const currentAlobeesConfig = controlElement?.options?.alobees;
+    const currentRule = controlElement?.rule;
 
     if (!visible) {
       return null;
@@ -66,6 +74,11 @@ export const withElementControls = (
         <AlobeesElement
           value={currentAlobeesConfig}
           onChange={updateAlobeesConfig}
+        />
+        <RuleElement
+          value={currentRule}
+          onChange={updateRule}
+          availableScopes={availableScopes}
         />
       </div>
     );
